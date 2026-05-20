@@ -63,6 +63,13 @@ rules:
   - get
   - update
 - apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - create
+  - delete
+- apiGroups:
   - sparkoperator.k8s.io
   resources:
   - scheduledsparkapplications

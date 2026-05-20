@@ -216,4 +216,14 @@ Create the role policy rules for the controller in every Spark job namespace
   verbs:
   - "*"
 {{- end }}
+{{- if .Values.controller.driverPodDisruptionBudget.enable }}
+{{/* required for the per-SparkApplication driver PDB feature */}}
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - create
+  - delete
+{{- end }}
 {{- end -}}
