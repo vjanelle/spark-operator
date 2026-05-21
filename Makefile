@@ -280,6 +280,16 @@ kind-create-cluster: kind ## Create a kind cluster for integration tests.
 kind-load-image: kind-create-cluster docker-build ## Load the image into the kind cluster.
 	$(KIND) load docker-image --name $(KIND_CLUSTER_NAME) $(IMAGE)
 
+# SPARK_IMAGE is the Spark runtime image used by drivers/executors. Defaults to
+# the same tag used by examples/spark-pi.yaml so manual e2e checks line up with
+# the canonical example. Override on the command line if you need a different one.
+SPARK_IMAGE ?= docker.io/library/spark:4.0.1
+
+.PHONY: kind-load-spark-image
+kind-load-spark-image: kind-create-cluster ## Pull the Spark runtime image and load it into the kind cluster.
+	docker image inspect $(SPARK_IMAGE) >/dev/null 2>&1 || docker pull $(SPARK_IMAGE)
+	$(KIND) load docker-image --name $(KIND_CLUSTER_NAME) $(SPARK_IMAGE)
+
 .PHONY: kind-delete-cluster
 kind-delete-cluster: kind ## Delete the created kind cluster.
 	$(KIND) delete cluster --name $(KIND_CLUSTER_NAME) --kubeconfig $(KIND_KUBE_CONFIG)
@@ -294,7 +304,7 @@ uninstall-crd: manifests ## Uninstall CRDs from the K8s cluster specified in ~/.
 
 .PHONY: deploy
 deploy: IMAGE_TAG=local
-deploy: helm manifests update-crd kind-load-image ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: helm manifests update-crd kind-load-image kind-load-spark-image ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	$(HELM) upgrade --install -f charts/spark-operator-chart/ci/ci-values.yaml spark-operator ./charts/spark-operator-chart/
 
 .PHONY: undeploy
