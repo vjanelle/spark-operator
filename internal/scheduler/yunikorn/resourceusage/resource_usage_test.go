@@ -17,12 +17,9 @@ limitations under the License.
 package resourceusage
 
 import (
-	"testing"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/ptr"
 )
 
@@ -47,15 +44,17 @@ var _ = Describe("CpuRequest", func() {
 	})
 })
 
-func TestCpuRequestInvalid(t *testing.T) {
-	invalidInputs := []string{
-		"",
-		"asd",
-		"Random 500m",
-	}
+var _ = Describe("CpuRequestInvalid", func() {
+	It("preserves the expected behavior", func() {
+		invalidInputs := []string{
+			"",
+			"asd",
+			"Random 500m",
+		}
 
-	for _, input := range invalidInputs {
-		_, err := cpuRequest(nil, &input)
-		assert.NotNil(t, err)
-	}
-}
+		for _, input := range invalidInputs {
+			_, err := cpuRequest(nil, &input)
+			Expect(err).NotTo(BeNil())
+		}
+	})
+})
