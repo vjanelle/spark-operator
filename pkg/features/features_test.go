@@ -19,9 +19,7 @@ package features
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"testing"
 
-	"github.com/stretchr/testify/assert"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/component-base/featuregate"
 )
@@ -71,22 +69,22 @@ var _ = It("DefaultTimeToLiveGateRegisteredAndOffByDefault", func() {
 	Expect(Enabled(DefaultTimeToLive)).To(BeTrue())
 })
 
-func TestSetFeatureGateDuringTestHelper(t *testing.T) {
+var _ = It("SetFeatureGateDuringTestHelper", func() {
 	// Register a test feature for this test
 	testFeature := featuregate.Feature("TestFeatureForDuringTest")
 	err := utilfeature.DefaultMutableFeatureGate.Add(map[featuregate.Feature]featuregate.FeatureSpec{
 		testFeature: {Default: false, PreRelease: featuregate.Alpha},
 	})
-	assert.NoError(t, err)
+	Expect(err).NotTo(HaveOccurred())
 
 	// Verify the feature is disabled by default
-	assert.False(t, Enabled(testFeature))
+	Expect(Enabled(testFeature)).To(BeFalse())
 
 	// Enable the feature gate during the test
-	SetFeatureGateDuringTest(t, testFeature, true)
+	SetFeatureGateDuringTest(GinkgoTB(), testFeature, true)
 
 	// Verify the feature is now enabled
-	assert.True(t, Enabled(testFeature))
+	Expect(Enabled(testFeature)).To(BeTrue())
 
 	// After the test, the feature gate will be automatically restored to its original value
-}
+})
