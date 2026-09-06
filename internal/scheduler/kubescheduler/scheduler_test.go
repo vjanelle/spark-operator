@@ -52,10 +52,12 @@ var _ = Describe("FactoryWithValidConfig", func() {
 	})
 })
 
-func TestFactoryWithInvalidConfig(t *testing.T) {
-	_, err := Factory(struct{}{})
-	require.Error(t, err)
-}
+var _ = Describe("FactoryWithInvalidConfig", func() {
+	It("preserves the expected behavior", func() {
+		_, err := Factory(struct{}{})
+		Expect(err).To(HaveOccurred())
+	})
+})
 
 func TestSchedulerName(t *testing.T) {
 	sch, _ := newTestScheduler(t)
