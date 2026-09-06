@@ -18,12 +18,10 @@ package yunikorn
 
 import (
 	"encoding/json"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
@@ -382,40 +380,42 @@ var _ = Describe("Schedule", func() {
 	}
 })
 
-func TestMergeNodeSelector(t *testing.T) {
-	testCases := []struct {
-		appNodeSelector map[string]string
-		podNodeSelector map[string]string
-		expected        map[string]string
-	}{
-		{
-			appNodeSelector: map[string]string{},
-			podNodeSelector: map[string]string{},
-			expected:        nil,
-		},
-		{
-			appNodeSelector: map[string]string{"key1": "value1"},
-			podNodeSelector: map[string]string{},
-			expected:        map[string]string{"key1": "value1"},
-		},
-		{
-			appNodeSelector: map[string]string{},
-			podNodeSelector: map[string]string{"key1": "value1"},
-			expected:        map[string]string{"key1": "value1"},
-		},
-		{
-			appNodeSelector: map[string]string{"key1": "value1"},
-			podNodeSelector: map[string]string{"key2": "value2"},
-			expected:        map[string]string{"key1": "value1", "key2": "value2"},
-		},
-		{
-			appNodeSelector: map[string]string{"key1": "value1"},
-			podNodeSelector: map[string]string{"key1": "value2", "key2": "value2"},
-			expected:        map[string]string{"key1": "value2", "key2": "value2"},
-		},
-	}
+var _ = Describe("MergeNodeSelector", func() {
+	It("preserves the expected behavior", func() {
+		testCases := []struct {
+			appNodeSelector map[string]string
+			podNodeSelector map[string]string
+			expected        map[string]string
+		}{
+			{
+				appNodeSelector: map[string]string{},
+				podNodeSelector: map[string]string{},
+				expected:        nil,
+			},
+			{
+				appNodeSelector: map[string]string{"key1": "value1"},
+				podNodeSelector: map[string]string{},
+				expected:        map[string]string{"key1": "value1"},
+			},
+			{
+				appNodeSelector: map[string]string{},
+				podNodeSelector: map[string]string{"key1": "value1"},
+				expected:        map[string]string{"key1": "value1"},
+			},
+			{
+				appNodeSelector: map[string]string{"key1": "value1"},
+				podNodeSelector: map[string]string{"key2": "value2"},
+				expected:        map[string]string{"key1": "value1", "key2": "value2"},
+			},
+			{
+				appNodeSelector: map[string]string{"key1": "value1"},
+				podNodeSelector: map[string]string{"key1": "value2", "key2": "value2"},
+				expected:        map[string]string{"key1": "value2", "key2": "value2"},
+			},
+		}
 
-	for _, tc := range testCases {
-		assert.Equal(t, tc.expected, mergeNodeSelector(tc.appNodeSelector, tc.podNodeSelector))
-	}
-}
+		for _, tc := range testCases {
+			Expect(mergeNodeSelector(tc.appNodeSelector, tc.podNodeSelector)).To(Equal(tc.expected))
+		}
+	})
+})
