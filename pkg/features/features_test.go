@@ -63,13 +63,13 @@ var _ = It("SetEnableWithRegisteredFeature", func() {
 	Expect(Enabled(testFeature)).To(BeFalse())
 })
 
-func TestDefaultTimeToLiveGateRegisteredAndOffByDefault(t *testing.T) {
+var _ = It("DefaultTimeToLiveGateRegisteredAndOffByDefault", func() {
 	// The gate must be registered (init ran) and default to disabled.
-	assert.False(t, Enabled(DefaultTimeToLive))
+	Expect(Enabled(DefaultTimeToLive)).To(BeFalse())
 
-	SetFeatureGateDuringTest(t, DefaultTimeToLive, true)
-	assert.True(t, Enabled(DefaultTimeToLive))
-}
+	SetFeatureGateDuringTest(GinkgoTB(), DefaultTimeToLive, true)
+	Expect(Enabled(DefaultTimeToLive)).To(BeTrue())
+})
 
 func TestSetFeatureGateDuringTestHelper(t *testing.T) {
 	// Register a test feature for this test
