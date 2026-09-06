@@ -17,12 +17,8 @@ limitations under the License.
 package resourceusage
 
 import (
-	"testing"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/stretchr/testify/assert"
 )
 
 var _ = Describe("ByteStringAsMb", func() {
@@ -46,7 +42,7 @@ var _ = Describe("ByteStringAsMb", func() {
 	}
 })
 
-func TestByteStringAsMbInvalid(t *testing.T) {
+var _ = Describe("ByteStringAsMbInvalid", func() {
 	invalidInputs := []string{
 		"0.064",
 		"0.064m",
@@ -58,9 +54,9 @@ func TestByteStringAsMbInvalid(t *testing.T) {
 	}
 
 	for _, input := range invalidInputs {
-		t.Run(input, func(t *testing.T) {
+		It(input, func() {
 			_, err := byteStringAsBytes(input)
-			assert.NotNil(t, err)
+			Expect(err).NotTo(BeNil())
 		})
 	}
-}
+})
