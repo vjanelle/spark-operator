@@ -20,6 +20,9 @@ import (
 	"context"
 	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -36,16 +39,18 @@ import (
 	schedulingv1alpha1 "sigs.k8s.io/scheduler-plugins/apis/scheduling/v1alpha1"
 )
 
-func TestFactoryWithValidConfig(t *testing.T) {
-	scheme := newTestScheme(t)
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+var _ = Describe("FactoryWithValidConfig", func() {
+	It("preserves the expected behavior", func() {
+		scheme := newTestScheme(GinkgoT())
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	cfg := &Config{SchedulerName: Name, Client: fakeClient}
-	sch, err := Factory(cfg)
+		cfg := &Config{SchedulerName: Name, Client: fakeClient}
+		sch, err := Factory(cfg)
 
-	require.NoError(t, err)
-	assert.Equal(t, Name, sch.Name())
-}
+		Expect(err).NotTo(HaveOccurred())
+		Expect(sch.Name()).To(Equal(Name))
+	})
+})
 
 func TestFactoryWithInvalidConfig(t *testing.T) {
 	_, err := Factory(struct{}{})
@@ -146,7 +151,12 @@ func TestCleanupIgnoresNotFound(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func newTestScheduler(t *testing.T, objs ...client.Object) (*Scheduler, client.Client) {
+func newTestScheduler(t interface {
+	Helper()
+	FailNow()
+	Errorf(string, ...interface{})
+	Fatalf(string, ...interface{})
+}, objs ...client.Object) (*Scheduler, client.Client) {
 	t.Helper()
 
 	scheme := newTestScheme(t)
@@ -154,7 +164,12 @@ func newTestScheduler(t *testing.T, objs ...client.Object) (*Scheduler, client.C
 	return &Scheduler{name: Name, client: cl}, cl
 }
 
-func newTestScheme(t *testing.T) *runtime.Scheme {
+func newTestScheme(t interface {
+	Helper()
+	FailNow()
+	Errorf(string, ...interface{})
+	Fatalf(string, ...interface{})
+}) *runtime.Scheme {
 	t.Helper()
 
 	scheme := runtime.NewScheme()
@@ -195,7 +210,12 @@ func expectedMinResources(app *v1beta2.SparkApplication) corev1.ResourceList {
 	return util.SumResourceList([]corev1.ResourceList{util.GetDriverRequestResource(app), util.GetExecutorRequestResource(app)})
 }
 
-func assertResourceListEqual(t *testing.T, actual, expected corev1.ResourceList) {
+func assertResourceListEqual(t interface {
+	Helper()
+	FailNow()
+	Errorf(string, ...interface{})
+	Fatalf(string, ...interface{})
+}, actual, expected corev1.ResourceList) {
 	t.Helper()
 
 	assert.Equal(t, len(expected), len(actual))
