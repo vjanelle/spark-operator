@@ -18,9 +18,6 @@ package v1beta2
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 var _ = It("SetSparkApplicationDefaultsNilSparkApplicationShouldNotModifySparkApplication", func() {
@@ -157,7 +154,7 @@ var _ = It("SetSparkApplicationDefaultsDriverSpecDefaults", func() {
 	Expect(app.Spec.Driver.Memory).To(BeNil())
 })
 
-func TestSetSparkApplicationDefaultsExecutorSpecDefaults(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsExecutorSpecDefaults", func() {
 	//Case1: Executor config not set.
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{},
@@ -166,21 +163,21 @@ func TestSetSparkApplicationDefaultsExecutorSpecDefaults(t *testing.T) {
 	SetSparkApplicationDefaults(app)
 
 	if app.Spec.Executor.Cores == nil {
-		t.Error("Expected app.Spec.Executor.Cores not to be nil.")
+		Fail("Expected app.Spec.Executor.Cores not to be nil.")
 	} else {
-		assert.Equal(t, int32(1), *app.Spec.Executor.Cores)
+		Expect(*app.Spec.Executor.Cores).To(Equal(int32(1)))
 	}
 
 	if app.Spec.Executor.Memory == nil {
-		t.Error("Expected app.Spec.Executor.Memory not to be nil.")
+		Fail("Expected app.Spec.Executor.Memory not to be nil.")
 	} else {
-		assert.Equal(t, "1g", *app.Spec.Executor.Memory)
+		Expect(*app.Spec.Executor.Memory).To(Equal("1g"))
 	}
 
 	if app.Spec.Executor.Instances == nil {
-		t.Error("Expected app.Spec.Executor.Instances not to be nil.")
+		Fail("Expected app.Spec.Executor.Instances not to be nil.")
 	} else {
-		assert.Equal(t, int32(1), *app.Spec.Executor.Instances)
+		Expect(*app.Spec.Executor.Instances).To(Equal(int32(1)))
 	}
 
 	//Case2: Executor config set via SparkConf.
@@ -196,9 +193,9 @@ func TestSetSparkApplicationDefaultsExecutorSpecDefaults(t *testing.T) {
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Nil(t, app.Spec.Executor.Cores)
-	assert.Nil(t, app.Spec.Executor.Memory)
-	assert.Nil(t, app.Spec.Executor.Instances)
+	Expect(app.Spec.Executor.Cores).To(BeNil())
+	Expect(app.Spec.Executor.Memory).To(BeNil())
+	Expect(app.Spec.Executor.Instances).To(BeNil())
 
 	//Case3: Dynamic allocation is enabled with minExecutors = 0
 	var minExecs = int32(0)
@@ -212,7 +209,7 @@ func TestSetSparkApplicationDefaultsExecutorSpecDefaults(t *testing.T) {
 	}
 
 	SetSparkApplicationDefaults(app)
-	assert.Nil(t, app.Spec.Executor.Instances)
+	Expect(app.Spec.Executor.Instances).To(BeNil())
 
 	//Case4: Dynamic allocation is enabled via SparkConf
 	app = &SparkApplication{
@@ -224,5 +221,5 @@ func TestSetSparkApplicationDefaultsExecutorSpecDefaults(t *testing.T) {
 	}
 
 	SetSparkApplicationDefaults(app)
-	assert.Nil(t, app.Spec.Executor.Instances)
-}
+	Expect(app.Spec.Executor.Instances).To(BeNil())
+})
