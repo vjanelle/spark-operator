@@ -17,23 +17,24 @@ limitations under the License.
 package resourceusage
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestBytesToMi(t *testing.T) {
-	testCases := []struct {
-		input    int64
-		expected string
-	}{
-		{(2 * 1024 * 1024) - 1, "1Mi"},
-		{2 * 1024 * 1024, "2Mi"},
-		{(1024 * 1024 * 1024) - 1, "1023Mi"},
-		{1024 * 1024 * 1024, "1024Mi"},
-	}
+var _ = Describe("BytesToMi", func() {
+	It("preserves the expected behavior", func() {
+		testCases := []struct {
+			input    int64
+			expected string
+		}{
+			{(2 * 1024 * 1024) - 1, "1Mi"},
+			{2 * 1024 * 1024, "2Mi"},
+			{(1024 * 1024 * 1024) - 1, "1023Mi"},
+			{1024 * 1024 * 1024, "1024Mi"},
+		}
 
-	for _, tc := range testCases {
-		assert.Equal(t, tc.expected, bytesToMi(tc.input))
-	}
-}
+		for _, tc := range testCases {
+			Expect(bytesToMi(tc.input)).To(Equal(tc.expected))
+		}
+	})
+})
