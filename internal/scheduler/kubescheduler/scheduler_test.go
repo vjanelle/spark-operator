@@ -59,10 +59,12 @@ var _ = Describe("FactoryWithInvalidConfig", func() {
 	})
 })
 
-func TestSchedulerName(t *testing.T) {
-	sch, _ := newTestScheduler(t)
-	assert.Equal(t, Name, sch.Name())
-}
+var _ = Describe("SchedulerName", func() {
+	It("preserves the expected behavior", func() {
+		sch, _ := newTestScheduler(GinkgoT())
+		Expect(sch.Name()).To(Equal(Name))
+	})
+})
 
 func TestShouldScheduleAlwaysTrue(t *testing.T) {
 	sch, _ := newTestScheduler(t)
