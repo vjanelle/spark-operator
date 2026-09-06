@@ -31,15 +31,15 @@ var _ = It("SetSparkApplicationDefaultsNilSparkApplicationShouldNotModifySparkAp
 	Expect(app).To(BeNil())
 })
 
-func TestSetSparkApplicationDefaultsEmptyModeShouldDefaultToClusterMode(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsEmptyModeShouldDefaultToClusterMode", func() {
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{},
 	}
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Equal(t, DeployModeCluster, app.Spec.Mode)
-}
+	Expect(app.Spec.Mode).To(Equal(DeployModeCluster))
+})
 
 func TestSetSparkApplicationDefaultsModeShouldNotChangeIfSet(t *testing.T) {
 	expectedMode := DeployModeClient
