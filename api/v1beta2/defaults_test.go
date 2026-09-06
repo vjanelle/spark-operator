@@ -16,30 +16,29 @@ limitations under the License.
 package v1beta2
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestSetSparkApplicationDefaultsNilSparkApplicationShouldNotModifySparkApplication(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsNilSparkApplicationShouldNotModifySparkApplication", func() {
 	var app *SparkApplication
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Nil(t, app)
-}
+	Expect(app).To(BeNil())
+})
 
-func TestSetSparkApplicationDefaultsEmptyModeShouldDefaultToClusterMode(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsEmptyModeShouldDefaultToClusterMode", func() {
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{},
 	}
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Equal(t, DeployModeCluster, app.Spec.Mode)
-}
+	Expect(app.Spec.Mode).To(Equal(DeployModeCluster))
+})
 
-func TestSetSparkApplicationDefaultsModeShouldNotChangeIfSet(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsModeShouldNotChangeIfSet", func() {
 	expectedMode := DeployModeClient
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{
@@ -49,20 +48,20 @@ func TestSetSparkApplicationDefaultsModeShouldNotChangeIfSet(t *testing.T) {
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Equal(t, expectedMode, app.Spec.Mode)
-}
+	Expect(app.Spec.Mode).To(Equal(expectedMode))
+})
 
-func TestSetSparkApplicationDefaultsEmptyRestartPolicyShouldDefaultToNever(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsEmptyRestartPolicyShouldDefaultToNever", func() {
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{},
 	}
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Equal(t, RestartPolicyNever, app.Spec.RestartPolicy.Type)
-}
+	Expect(app.Spec.RestartPolicy.Type).To(Equal(RestartPolicyNever))
+})
 
-func TestSetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValues(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValues", func() {
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{
 			RestartPolicy: RestartPolicy{
@@ -73,14 +72,14 @@ func TestSetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValues
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Equal(t, RestartPolicyOnFailure, app.Spec.RestartPolicy.Type)
-	assert.NotNil(t, app.Spec.RestartPolicy.OnFailureRetryInterval)
-	assert.Equal(t, int64(5), *app.Spec.RestartPolicy.OnFailureRetryInterval)
-	assert.NotNil(t, app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval)
-	assert.Equal(t, int64(5), *app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval)
-}
+	Expect(app.Spec.RestartPolicy.Type).To(Equal(RestartPolicyOnFailure))
+	Expect(app.Spec.RestartPolicy.OnFailureRetryInterval).NotTo(BeNil())
+	Expect(*app.Spec.RestartPolicy.OnFailureRetryInterval).To(Equal(int64(5)))
+	Expect(app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval).NotTo(BeNil())
+	Expect(*app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval).To(Equal(int64(5)))
+})
 
-func TestSetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValueForOnFailureRetryInterval(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValueForOnFailureRetryInterval", func() {
 	expectedOnSubmissionFailureRetryInterval := int64(14)
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{
@@ -93,14 +92,14 @@ func TestSetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValueF
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Equal(t, RestartPolicyOnFailure, app.Spec.RestartPolicy.Type)
-	assert.NotNil(t, app.Spec.RestartPolicy.OnFailureRetryInterval)
-	assert.Equal(t, int64(5), *app.Spec.RestartPolicy.OnFailureRetryInterval)
-	assert.NotNil(t, app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval)
-	assert.Equal(t, expectedOnSubmissionFailureRetryInterval, *app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval)
-}
+	Expect(app.Spec.RestartPolicy.Type).To(Equal(RestartPolicyOnFailure))
+	Expect(app.Spec.RestartPolicy.OnFailureRetryInterval).NotTo(BeNil())
+	Expect(*app.Spec.RestartPolicy.OnFailureRetryInterval).To(Equal(int64(5)))
+	Expect(app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval).NotTo(BeNil())
+	Expect(*app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval).To(Equal(expectedOnSubmissionFailureRetryInterval))
+})
 
-func TestSetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValueForOnSubmissionFailureRetryInterval(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValueForOnSubmissionFailureRetryInterval", func() {
 	expectedOnFailureRetryInterval := int64(10)
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{
@@ -113,14 +112,14 @@ func TestSetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValueF
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Equal(t, RestartPolicyOnFailure, app.Spec.RestartPolicy.Type)
-	assert.NotNil(t, app.Spec.RestartPolicy.OnFailureRetryInterval)
-	assert.Equal(t, expectedOnFailureRetryInterval, *app.Spec.RestartPolicy.OnFailureRetryInterval)
-	assert.NotNil(t, app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval)
-	assert.Equal(t, int64(5), *app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval)
-}
+	Expect(app.Spec.RestartPolicy.Type).To(Equal(RestartPolicyOnFailure))
+	Expect(app.Spec.RestartPolicy.OnFailureRetryInterval).NotTo(BeNil())
+	Expect(*app.Spec.RestartPolicy.OnFailureRetryInterval).To(Equal(expectedOnFailureRetryInterval))
+	Expect(app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval).NotTo(BeNil())
+	Expect(*app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval).To(Equal(int64(5)))
+})
 
-func TestSetSparkApplicationDefaultsDriverSpecDefaults(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsDriverSpecDefaults", func() {
 	//Case1: Driver config not set.
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{},
@@ -129,15 +128,15 @@ func TestSetSparkApplicationDefaultsDriverSpecDefaults(t *testing.T) {
 	SetSparkApplicationDefaults(app)
 
 	if app.Spec.Driver.Cores == nil {
-		t.Error("Expected app.Spec.Driver.Cores not to be nil.")
+		Fail("Expected app.Spec.Driver.Cores not to be nil.")
 	} else {
-		assert.Equal(t, int32(1), *app.Spec.Driver.Cores)
+		Expect(*app.Spec.Driver.Cores).To(Equal(int32(1)))
 	}
 
 	if app.Spec.Driver.Memory == nil {
-		t.Error("Expected app.Spec.Driver.Memory not to be nil.")
+		Fail("Expected app.Spec.Driver.Memory not to be nil.")
 	} else {
-		assert.Equal(t, "1g", *app.Spec.Driver.Memory)
+		Expect(*app.Spec.Driver.Memory).To(Equal("1g"))
 	}
 
 	//Case2: Driver config set via SparkConf.
@@ -151,11 +150,11 @@ func TestSetSparkApplicationDefaultsDriverSpecDefaults(t *testing.T) {
 	}
 	SetSparkApplicationDefaults(app)
 
-	assert.Nil(t, app.Spec.Driver.Cores)
-	assert.Nil(t, app.Spec.Driver.Memory)
-}
+	Expect(app.Spec.Driver.Cores).To(BeNil())
+	Expect(app.Spec.Driver.Memory).To(BeNil())
+})
 
-func TestSetSparkApplicationDefaultsExecutorSpecDefaults(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsExecutorSpecDefaults", func() {
 	//Case1: Executor config not set.
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{},
@@ -164,21 +163,21 @@ func TestSetSparkApplicationDefaultsExecutorSpecDefaults(t *testing.T) {
 	SetSparkApplicationDefaults(app)
 
 	if app.Spec.Executor.Cores == nil {
-		t.Error("Expected app.Spec.Executor.Cores not to be nil.")
+		Fail("Expected app.Spec.Executor.Cores not to be nil.")
 	} else {
-		assert.Equal(t, int32(1), *app.Spec.Executor.Cores)
+		Expect(*app.Spec.Executor.Cores).To(Equal(int32(1)))
 	}
 
 	if app.Spec.Executor.Memory == nil {
-		t.Error("Expected app.Spec.Executor.Memory not to be nil.")
+		Fail("Expected app.Spec.Executor.Memory not to be nil.")
 	} else {
-		assert.Equal(t, "1g", *app.Spec.Executor.Memory)
+		Expect(*app.Spec.Executor.Memory).To(Equal("1g"))
 	}
 
 	if app.Spec.Executor.Instances == nil {
-		t.Error("Expected app.Spec.Executor.Instances not to be nil.")
+		Fail("Expected app.Spec.Executor.Instances not to be nil.")
 	} else {
-		assert.Equal(t, int32(1), *app.Spec.Executor.Instances)
+		Expect(*app.Spec.Executor.Instances).To(Equal(int32(1)))
 	}
 
 	//Case2: Executor config set via SparkConf.
@@ -194,9 +193,9 @@ func TestSetSparkApplicationDefaultsExecutorSpecDefaults(t *testing.T) {
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Nil(t, app.Spec.Executor.Cores)
-	assert.Nil(t, app.Spec.Executor.Memory)
-	assert.Nil(t, app.Spec.Executor.Instances)
+	Expect(app.Spec.Executor.Cores).To(BeNil())
+	Expect(app.Spec.Executor.Memory).To(BeNil())
+	Expect(app.Spec.Executor.Instances).To(BeNil())
 
 	//Case3: Dynamic allocation is enabled with minExecutors = 0
 	var minExecs = int32(0)
@@ -210,7 +209,7 @@ func TestSetSparkApplicationDefaultsExecutorSpecDefaults(t *testing.T) {
 	}
 
 	SetSparkApplicationDefaults(app)
-	assert.Nil(t, app.Spec.Executor.Instances)
+	Expect(app.Spec.Executor.Instances).To(BeNil())
 
 	//Case4: Dynamic allocation is enabled via SparkConf
 	app = &SparkApplication{
@@ -222,5 +221,5 @@ func TestSetSparkApplicationDefaultsExecutorSpecDefaults(t *testing.T) {
 	}
 
 	SetSparkApplicationDefaults(app)
-	assert.Nil(t, app.Spec.Executor.Instances)
-}
+	Expect(app.Spec.Executor.Instances).To(BeNil())
+})
