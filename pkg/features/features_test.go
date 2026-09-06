@@ -17,6 +17,8 @@ limitations under the License.
 package features
 
 import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,11 +26,11 @@ import (
 	"k8s.io/component-base/featuregate"
 )
 
-func TestDefaultFeatureGatesRegistered(t *testing.T) {
+var _ = It("DefaultFeatureGatesRegistered", func() {
 	// Verify that defaultFeatureGates is registered with the global feature gate.
 	// This test ensures the init() function ran successfully.
-	assert.NotNil(t, utilfeature.DefaultFeatureGate)
-}
+	Expect(utilfeature.DefaultFeatureGate).NotTo(BeNil())
+})
 
 func TestEnabledWithRegisteredFeature(t *testing.T) {
 	// Register a test feature for this test
