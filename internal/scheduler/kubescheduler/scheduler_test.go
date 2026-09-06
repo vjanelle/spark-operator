@@ -98,41 +98,43 @@ var _ = Describe("ScheduleCreatesPodGroupAndLabelsApp", func() {
 	})
 })
 
-func TestScheduleUpdatesExistingPodGroup(t *testing.T) {
-	app := newTestSparkApplication()
-	existing := &schedulingv1alpha1.PodGroup{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            getPodGroupName(app),
-			Namespace:       app.Namespace,
-			ResourceVersion: "1",
-			Labels:          map[string]string{"existing": "label"},
-		},
-		Spec: schedulingv1alpha1.PodGroupSpec{
-			MinMember: 5,
-			MinResources: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("100m"),
-				corev1.ResourceMemory: resource.MustParse("100Mi"),
+var _ = Describe("ScheduleUpdatesExistingPodGroup", func() {
+	It("preserves the expected behavior", func() {
+		app := newTestSparkApplication()
+		existing := &schedulingv1alpha1.PodGroup{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            getPodGroupName(app),
+				Namespace:       app.Namespace,
+				ResourceVersion: "1",
+				Labels:          map[string]string{"existing": "label"},
 			},
-		},
-	}
+			Spec: schedulingv1alpha1.PodGroupSpec{
+				MinMember: 5,
+				MinResources: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("100Mi"),
+				},
+			},
+		}
 
-	sch, cl := newTestScheduler(t, existing)
-	app.Labels = map[string]string{"preserve": "me"}
+		sch, cl := newTestScheduler(GinkgoT(), existing)
+		app.Labels = map[string]string{"preserve": "me"}
 
-	err := sch.Schedule(app)
-	require.NoError(t, err)
+		err := sch.Schedule(app)
+		Expect(err).NotTo(HaveOccurred())
 
-	updated := &schedulingv1alpha1.PodGroup{}
-	err = cl.Get(context.Background(), types.NamespacedName{Namespace: app.Namespace, Name: getPodGroupName(app)}, updated)
-	require.NoError(t, err)
+		updated := &schedulingv1alpha1.PodGroup{}
+		err = cl.Get(context.Background(), types.NamespacedName{Namespace: app.Namespace, Name: getPodGroupName(app)}, updated)
+		Expect(err).NotTo(HaveOccurred())
 
-	assert.Equal(t, int32(1), updated.Spec.MinMember)
-	assertResourceListEqual(t, updated.Spec.MinResources, expectedMinResources(app))
-	require.Len(t, updated.OwnerReferences, 1)
-	assert.Equal(t, app.Name, updated.OwnerReferences[0].Name)
-	assert.Equal(t, "me", app.Labels["preserve"])
-	assert.Equal(t, getPodGroupName(app), app.Labels[schedulingv1alpha1.PodGroupLabel])
-}
+		Expect(updated.Spec.MinMember).To(Equal(int32(1)))
+		assertResourceListEqual(GinkgoT(), updated.Spec.MinResources, expectedMinResources(app))
+		Expect(updated.OwnerReferences).To(HaveLen(1))
+		Expect(updated.OwnerReferences[0].Name).To(Equal(app.Name))
+		Expect(app.Labels["preserve"]).To(Equal("me"))
+		Expect(app.Labels[schedulingv1alpha1.PodGroupLabel]).To(Equal(getPodGroupName(app)))
+	})
+})
 
 func TestCleanupDeletesPodGroup(t *testing.T) {
 	app := newTestSparkApplication()
