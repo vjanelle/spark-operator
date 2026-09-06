@@ -19,10 +19,13 @@ package resourceusage
 import (
 	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/stretchr/testify/assert"
 )
 
-func TestByteStringAsMb(t *testing.T) {
+var _ = Describe("ByteStringAsMb", func() {
 	testCases := []struct {
 		input    string
 		expected int
@@ -35,13 +38,13 @@ func TestByteStringAsMb(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.input, func(t *testing.T) {
+		It(tc.input, func() {
 			actual, err := byteStringAsBytes(tc.input)
-			assert.Nil(t, err)
-			assert.Equal(t, int64(tc.expected), actual)
+			Expect(err).To(BeNil())
+			Expect(actual).To(Equal(int64(tc.expected)))
 		})
 	}
-}
+})
 
 func TestByteStringAsMbInvalid(t *testing.T) {
 	invalidInputs := []string{
