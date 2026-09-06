@@ -17,74 +17,74 @@ limitations under the License.
 package features
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
-	"github.com/stretchr/testify/assert"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/component-base/featuregate"
 )
 
-func TestDefaultFeatureGatesRegistered(t *testing.T) {
+var _ = It("DefaultFeatureGatesRegistered", func() {
 	// Verify that defaultFeatureGates is registered with the global feature gate.
 	// This test ensures the init() function ran successfully.
-	assert.NotNil(t, utilfeature.DefaultFeatureGate)
-}
+	Expect(utilfeature.DefaultFeatureGate).NotTo(BeNil())
+})
 
-func TestEnabledWithRegisteredFeature(t *testing.T) {
+var _ = It("EnabledWithRegisteredFeature", func() {
 	// Register a test feature for this test
 	testFeature := featuregate.Feature("TestFeatureForEnabled")
 	err := utilfeature.DefaultMutableFeatureGate.Add(map[featuregate.Feature]featuregate.FeatureSpec{
 		testFeature: {Default: false, PreRelease: featuregate.Alpha},
 	})
-	assert.NoError(t, err)
+	Expect(err).NotTo(HaveOccurred())
 
 	// Test that Enabled returns false for a disabled feature
-	assert.False(t, Enabled(testFeature))
-}
+	Expect(Enabled(testFeature)).To(BeFalse())
+})
 
-func TestSetEnableWithRegisteredFeature(t *testing.T) {
+var _ = It("SetEnableWithRegisteredFeature", func() {
 	// Register a test feature for this test
 	testFeature := featuregate.Feature("TestFeatureForSetEnable")
 	err := utilfeature.DefaultMutableFeatureGate.Add(map[featuregate.Feature]featuregate.FeatureSpec{
 		testFeature: {Default: false, PreRelease: featuregate.Alpha},
 	})
-	assert.NoError(t, err)
+	Expect(err).NotTo(HaveOccurred())
 
 	// Test SetEnable
 	err = SetEnable(testFeature, true)
-	assert.NoError(t, err)
-	assert.True(t, Enabled(testFeature))
+	Expect(err).NotTo(HaveOccurred())
+	Expect(Enabled(testFeature)).To(BeTrue())
 
 	// Disable the feature
 	err = SetEnable(testFeature, false)
-	assert.NoError(t, err)
-	assert.False(t, Enabled(testFeature))
-}
+	Expect(err).NotTo(HaveOccurred())
+	Expect(Enabled(testFeature)).To(BeFalse())
+})
 
-func TestDefaultTimeToLiveGateRegisteredAndOffByDefault(t *testing.T) {
+var _ = It("DefaultTimeToLiveGateRegisteredAndOffByDefault", func() {
 	// The gate must be registered (init ran) and default to disabled.
-	assert.False(t, Enabled(DefaultTimeToLive))
+	Expect(Enabled(DefaultTimeToLive)).To(BeFalse())
 
-	SetFeatureGateDuringTest(t, DefaultTimeToLive, true)
-	assert.True(t, Enabled(DefaultTimeToLive))
-}
+	SetFeatureGateDuringTest(GinkgoTB(), DefaultTimeToLive, true)
+	Expect(Enabled(DefaultTimeToLive)).To(BeTrue())
+})
 
-func TestSetFeatureGateDuringTestHelper(t *testing.T) {
+var _ = It("SetFeatureGateDuringTestHelper", func() {
 	// Register a test feature for this test
 	testFeature := featuregate.Feature("TestFeatureForDuringTest")
 	err := utilfeature.DefaultMutableFeatureGate.Add(map[featuregate.Feature]featuregate.FeatureSpec{
 		testFeature: {Default: false, PreRelease: featuregate.Alpha},
 	})
-	assert.NoError(t, err)
+	Expect(err).NotTo(HaveOccurred())
 
 	// Verify the feature is disabled by default
-	assert.False(t, Enabled(testFeature))
+	Expect(Enabled(testFeature)).To(BeFalse())
 
 	// Enable the feature gate during the test
-	SetFeatureGateDuringTest(t, testFeature, true)
+	SetFeatureGateDuringTest(GinkgoTB(), testFeature, true)
 
 	// Verify the feature is now enabled
-	assert.True(t, Enabled(testFeature))
+	Expect(Enabled(testFeature)).To(BeTrue())
 
 	// After the test, the feature gate will be automatically restored to its original value
-}
+})
