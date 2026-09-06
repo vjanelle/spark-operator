@@ -41,7 +41,7 @@ var _ = It("SetSparkApplicationDefaultsEmptyModeShouldDefaultToClusterMode", fun
 	Expect(app.Spec.Mode).To(Equal(DeployModeCluster))
 })
 
-func TestSetSparkApplicationDefaultsModeShouldNotChangeIfSet(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsModeShouldNotChangeIfSet", func() {
 	expectedMode := DeployModeClient
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{
@@ -51,8 +51,8 @@ func TestSetSparkApplicationDefaultsModeShouldNotChangeIfSet(t *testing.T) {
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Equal(t, expectedMode, app.Spec.Mode)
-}
+	Expect(app.Spec.Mode).To(Equal(expectedMode))
+})
 
 func TestSetSparkApplicationDefaultsEmptyRestartPolicyShouldDefaultToNever(t *testing.T) {
 	app := &SparkApplication{
