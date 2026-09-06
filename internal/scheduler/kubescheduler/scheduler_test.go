@@ -66,12 +66,14 @@ var _ = Describe("SchedulerName", func() {
 	})
 })
 
-func TestShouldScheduleAlwaysTrue(t *testing.T) {
-	sch, _ := newTestScheduler(t)
-	app := newTestSparkApplication()
+var _ = Describe("ShouldScheduleAlwaysTrue", func() {
+	It("preserves the expected behavior", func() {
+		sch, _ := newTestScheduler(GinkgoT())
+		app := newTestSparkApplication()
 
-	assert.True(t, sch.ShouldSchedule(app))
-}
+		Expect(sch.ShouldSchedule(app)).To(BeTrue())
+	})
+})
 
 func TestScheduleCreatesPodGroupAndLabelsApp(t *testing.T) {
 	sch, cl := newTestScheduler(t)
