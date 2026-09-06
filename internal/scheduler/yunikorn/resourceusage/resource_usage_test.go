@@ -19,28 +19,33 @@ package resourceusage
 import (
 	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/ptr"
 )
 
-func TestCpuRequest(t *testing.T) {
-	testCases := []struct {
-		cores       *int32
-		coreRequest *string
-		expected    string
-	}{
-		{nil, nil, "1"},
-		{ptr.To[int32](1), nil, "1"},
-		{nil, ptr.To("1"), "1"},
-		{ptr.To[int32](1), ptr.To("500m"), "500m"},
-	}
+var _ = Describe("CpuRequest", func() {
+	It("preserves the expected behavior", func() {
+		testCases := []struct {
+			cores       *int32
+			coreRequest *string
+			expected    string
+		}{
+			{nil, nil, "1"},
+			{ptr.To[int32](1), nil, "1"},
+			{nil, ptr.To("1"), "1"},
+			{ptr.To[int32](1), ptr.To("500m"), "500m"},
+		}
 
-	for _, tc := range testCases {
-		actual, err := cpuRequest(tc.cores, tc.coreRequest)
-		assert.Nil(t, err)
-		assert.Equal(t, tc.expected, actual)
-	}
-}
+		for _, tc := range testCases {
+			actual, err := cpuRequest(tc.cores, tc.coreRequest)
+			Expect(err).To(BeNil())
+			Expect(actual).To(Equal(tc.expected))
+		}
+	})
+})
 
 func TestCpuRequestInvalid(t *testing.T) {
 	invalidInputs := []string{
