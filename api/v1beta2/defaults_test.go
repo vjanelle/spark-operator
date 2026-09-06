@@ -54,15 +54,15 @@ var _ = It("SetSparkApplicationDefaultsModeShouldNotChangeIfSet", func() {
 	Expect(app.Spec.Mode).To(Equal(expectedMode))
 })
 
-func TestSetSparkApplicationDefaultsEmptyRestartPolicyShouldDefaultToNever(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsEmptyRestartPolicyShouldDefaultToNever", func() {
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{},
 	}
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Equal(t, RestartPolicyNever, app.Spec.RestartPolicy.Type)
-}
+	Expect(app.Spec.RestartPolicy.Type).To(Equal(RestartPolicyNever))
+})
 
 func TestSetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValues(t *testing.T) {
 	app := &SparkApplication{
