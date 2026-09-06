@@ -75,26 +75,28 @@ var _ = Describe("ShouldScheduleAlwaysTrue", func() {
 	})
 })
 
-func TestScheduleCreatesPodGroupAndLabelsApp(t *testing.T) {
-	sch, cl := newTestScheduler(t)
-	app := newTestSparkApplication()
+var _ = Describe("ScheduleCreatesPodGroupAndLabelsApp", func() {
+	It("preserves the expected behavior", func() {
+		sch, cl := newTestScheduler(GinkgoT())
+		app := newTestSparkApplication()
 
-	err := sch.Schedule(app)
-	require.NoError(t, err)
+		err := sch.Schedule(app)
+		Expect(err).NotTo(HaveOccurred())
 
-	assert.Equal(t, getPodGroupName(app), app.Labels[schedulingv1alpha1.PodGroupLabel])
+		Expect(app.Labels[schedulingv1alpha1.PodGroupLabel]).To(Equal(getPodGroupName(app)))
 
-	created := &schedulingv1alpha1.PodGroup{}
-	err = cl.Get(context.Background(), types.NamespacedName{Namespace: app.Namespace, Name: getPodGroupName(app)}, created)
-	require.NoError(t, err)
+		created := &schedulingv1alpha1.PodGroup{}
+		err = cl.Get(context.Background(), types.NamespacedName{Namespace: app.Namespace, Name: getPodGroupName(app)}, created)
+		Expect(err).NotTo(HaveOccurred())
 
-	assert.Equal(t, int32(1), created.Spec.MinMember)
-	assertResourceListEqual(t, created.Spec.MinResources, expectedMinResources(app))
-	require.Len(t, created.OwnerReferences, 1)
-	assert.Equal(t, app.Name, created.OwnerReferences[0].Name)
-	assert.NotNil(t, created.OwnerReferences[0].Controller)
-	assert.True(t, *created.OwnerReferences[0].Controller)
-}
+		Expect(created.Spec.MinMember).To(Equal(int32(1)))
+		assertResourceListEqual(GinkgoT(), created.Spec.MinResources, expectedMinResources(app))
+		Expect(created.OwnerReferences).To(HaveLen(1))
+		Expect(created.OwnerReferences[0].Name).To(Equal(app.Name))
+		Expect(created.OwnerReferences[0].Controller).NotTo(BeNil())
+		Expect(*created.OwnerReferences[0].Controller).To(BeTrue())
+	})
+})
 
 func TestScheduleUpdatesExistingPodGroup(t *testing.T) {
 	app := newTestSparkApplication()
