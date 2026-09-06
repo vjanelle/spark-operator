@@ -44,24 +44,24 @@ var _ = It("EnabledWithRegisteredFeature", func() {
 	Expect(Enabled(testFeature)).To(BeFalse())
 })
 
-func TestSetEnableWithRegisteredFeature(t *testing.T) {
+var _ = It("SetEnableWithRegisteredFeature", func() {
 	// Register a test feature for this test
 	testFeature := featuregate.Feature("TestFeatureForSetEnable")
 	err := utilfeature.DefaultMutableFeatureGate.Add(map[featuregate.Feature]featuregate.FeatureSpec{
 		testFeature: {Default: false, PreRelease: featuregate.Alpha},
 	})
-	assert.NoError(t, err)
+	Expect(err).NotTo(HaveOccurred())
 
 	// Test SetEnable
 	err = SetEnable(testFeature, true)
-	assert.NoError(t, err)
-	assert.True(t, Enabled(testFeature))
+	Expect(err).NotTo(HaveOccurred())
+	Expect(Enabled(testFeature)).To(BeTrue())
 
 	// Disable the feature
 	err = SetEnable(testFeature, false)
-	assert.NoError(t, err)
-	assert.False(t, Enabled(testFeature))
-}
+	Expect(err).NotTo(HaveOccurred())
+	Expect(Enabled(testFeature)).To(BeFalse())
+})
 
 func TestDefaultTimeToLiveGateRegisteredAndOffByDefault(t *testing.T) {
 	// The gate must be registered (init ran) and default to disabled.
