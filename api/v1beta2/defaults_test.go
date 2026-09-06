@@ -16,18 +16,20 @@ limitations under the License.
 package v1beta2
 
 import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSetSparkApplicationDefaultsNilSparkApplicationShouldNotModifySparkApplication(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsNilSparkApplicationShouldNotModifySparkApplication", func() {
 	var app *SparkApplication
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Nil(t, app)
-}
+	Expect(app).To(BeNil())
+})
 
 func TestSetSparkApplicationDefaultsEmptyModeShouldDefaultToClusterMode(t *testing.T) {
 	app := &SparkApplication{
