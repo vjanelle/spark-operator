@@ -23,10 +23,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -36,7 +35,7 @@ import (
 
 // buildKustomize runs "kubectl kustomize" on config/default and returns the
 // parsed Kubernetes resources. The test is skipped when kubectl is absent.
-func buildKustomize(t *testing.T) []unstructured.Unstructured {
+func buildKustomize(t GinkgoTInterface) []unstructured.Unstructured {
 	t.Helper()
 
 	if _, err := exec.LookPath("kubectl"); err != nil {
@@ -48,7 +47,7 @@ func buildKustomize(t *testing.T) []unstructured.Unstructured {
 
 	cmd := exec.Command("kubectl", "kustomize", kustomizeDir)
 	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, "kustomize build failed:\n%s", string(output))
+	Expect(err).NotTo(HaveOccurred(), "kustomize build failed:\n%s", string(output))
 
 	var resources []unstructured.Unstructured
 	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(output), 4096)
@@ -66,7 +65,7 @@ func buildKustomize(t *testing.T) []unstructured.Unstructured {
 		}
 	}
 
-	require.NotEmpty(t, resources, "kustomize build produced no resources")
+	Expect(resources).NotTo(BeEmpty(), "kustomize build produced no resources")
 	return resources
 }
 
@@ -101,12 +100,12 @@ func findResources(resources []unstructured.Unstructured, kind string) []unstruc
 	return out
 }
 
-func convertTo[T any](t *testing.T, obj *unstructured.Unstructured) *T {
+func convertTo[T any](t GinkgoTInterface, obj *unstructured.Unstructured) *T {
 	t.Helper()
 	data, err := json.Marshal(obj.Object)
-	require.NoError(t, err)
+	Expect(err).NotTo(HaveOccurred())
 	result := new(T)
-	require.NoError(t, json.Unmarshal(data, result))
+	Expect(json.Unmarshal(data, result)).NotTo(HaveOccurred())
 	return result
 }
 
@@ -134,10 +133,11 @@ func rulesHaveResourceName(rules []rbacv1.PolicyRule, name string) bool {
 
 // --- tests ---
 
-func TestKustomizeBuild(t *testing.T) {
-	resources := buildKustomize(t)
+var _ = Describe("KustomizeBuild", func() {
+	var resources []unstructured.Unstructured
+	BeforeEach(func() { resources = buildKustomize(GinkgoT()) })
 
-	t.Run("ResourceInventory", func(t *testing.T) {
+	Context("ResourceInventory", func() {
 		expected := map[string]int{
 			"Namespace":                      1,
 			"CustomResourceDefinition":       3,
@@ -152,27 +152,27 @@ func TestKustomizeBuild(t *testing.T) {
 			"ValidatingWebhookConfiguration": 1,
 		}
 		for kind, want := range expected {
-			t.Run(kind, func(t *testing.T) {
-				assert.Equal(t, want, countKind(resources, kind), "unexpected %s count", kind)
+			It(kind, func() {
+				Expect(countKind(resources, kind)).To(Equal(want), "unexpected %s count", kind)
 			})
 		}
 	})
 
-	t.Run("NamespaceConsistency", func(t *testing.T) {
+	It("NamespaceConsistency", func() {
 		nsCount := 0
 		for i := range resources {
 			if resources[i].GetNamespace() == "spark-operator" {
 				nsCount++
 			}
 		}
-		assert.GreaterOrEqual(t, nsCount, 5,
-			"expected at least 5 namespaced resources in spark-operator namespace, got %d", nsCount)
+		Expect(nsCount).To(BeNumerically(">=", 5), "expected at least 5 namespaced resources in spark-operator namespace, got %d", nsCount)
 
 		ns := findResource(resources, "Namespace", "spark-operator")
-		require.NotNil(t, ns, "Namespace 'spark-operator' not found")
+		Expect(ns).NotTo(BeNil(), "Namespace 'spark-operator' not found")
 	})
 
-	t.Run("ImageReplacement", func(t *testing.T) {
+	It("ImageReplacement", func() {
+		t := GinkgoT()
 		var imageCount int
 		for _, d := range findResources(resources, "Deployment") {
 			dep := convertTo[appsv1.Deployment](t, &d)
@@ -182,22 +182,22 @@ func TestKustomizeBuild(t *testing.T) {
 				}
 			}
 		}
-		assert.Equal(t, 2, imageCount, "expected 2 upstream image references across deployments")
+		Expect(imageCount).To(Equal(2), "expected 2 upstream image references across deployments")
 	})
 
-	t.Run("ControllerRBAC", func(t *testing.T) {
+	It("ControllerRBAC", func() {
+		t := GinkgoT()
 		crObj := findResource(resources, "ClusterRole", "spark-operator-controller")
-		require.NotNil(t, crObj, "ClusterRole 'spark-operator-controller' not found")
+		Expect(crObj).NotTo(BeNil(), "ClusterRole 'spark-operator-controller' not found")
 
 		// Leader election lease is scoped in the controller Role, not ClusterRole.
 		roleObj := findResource(resources, "Role", "spark-operator-controller")
-		require.NotNil(t, roleObj, "Role 'controller' (leader-election) not found")
+		Expect(roleObj).NotTo(BeNil(), "Role 'controller' (leader-election) not found")
 		role := convertTo[rbacv1.Role](t, roleObj)
-		assert.True(t, rulesHaveResourceName(role.Rules, "spark-operator-controller-lock"),
-			"leader election lease should be scoped to 'spark-operator-controller-lock'")
+		Expect(rulesHaveResourceName(role.Rules, "spark-operator-controller-lock")).To(BeTrue(), "leader election lease should be scoped to 'spark-operator-controller-lock'")
 
 		crbObj := findResource(resources, "ClusterRoleBinding", "spark-operator-controller")
-		require.NotNil(t, crbObj, "ClusterRoleBinding 'spark-operator-controller' not found")
+		Expect(crbObj).NotTo(BeNil(), "ClusterRoleBinding 'spark-operator-controller' not found")
 		crb := convertTo[rbacv1.ClusterRoleBinding](t, crbObj)
 
 		hasSA := false
@@ -207,45 +207,41 @@ func TestKustomizeBuild(t *testing.T) {
 				break
 			}
 		}
-		assert.True(t, hasSA, "controller ClusterRoleBinding should reference a ServiceAccount")
+		Expect(hasSA).To(BeTrue(), "controller ClusterRoleBinding should reference a ServiceAccount")
 	})
 
-	t.Run("WebhookClusterRole", func(t *testing.T) {
+	It("WebhookClusterRole", func() {
+		t := GinkgoT()
 		obj := findResource(resources, "ClusterRole", "spark-operator-webhook")
-		require.NotNil(t, obj, "ClusterRole 'spark-operator-webhook' not found")
+		Expect(obj).NotTo(BeNil(), "ClusterRole 'spark-operator-webhook' not found")
 		cr := convertTo[rbacv1.ClusterRole](t, obj)
 
 		for _, res := range []string{"pods", "resourcequotas", "sparkapplications", "scheduledsparkapplications", "mutatingwebhookconfigurations"} {
-			assert.True(t, rulesHaveResource(cr.Rules, res),
-				"webhook ClusterRole should have '%s'", res)
+			Expect(rulesHaveResource(cr.Rules, res)).To(BeTrue(), "webhook ClusterRole should have '%s'", res)
 		}
 		for _, res := range []string{"events"} {
-			assert.False(t, rulesHaveResource(cr.Rules, res),
-				"webhook ClusterRole should NOT have '%s' (not code-required)", res)
+			Expect(rulesHaveResource(cr.Rules, res)).To(BeFalse(), "webhook ClusterRole should NOT have '%s' (not code-required)", res)
 		}
 
-		assert.True(t, rulesHaveResourceName(cr.Rules, "mutating-webhook-configuration"),
-			"webhook ClusterRole should scope resourceNames for webhook configs")
+		Expect(rulesHaveResourceName(cr.Rules, "mutating-webhook-configuration")).To(BeTrue(), "webhook ClusterRole should scope resourceNames for webhook configs")
 	})
 
-	t.Run("WebhookRole", func(t *testing.T) {
+	It("WebhookRole", func() {
+		t := GinkgoT()
 		obj := findResource(resources, "Role", "spark-operator-webhook")
-		require.NotNil(t, obj, "Role 'webhook' not found")
+		Expect(obj).NotTo(BeNil(), "Role 'webhook' not found")
 		role := convertTo[rbacv1.Role](t, obj)
 
-		assert.True(t, rulesHaveResource(role.Rules, "secrets"),
-			"webhook Role should have 'secrets'")
-		assert.True(t, rulesHaveResource(role.Rules, "events"),
-			"webhook Role should have 'events' for leader election event recording")
-		assert.True(t, rulesHaveResourceName(role.Rules, "spark-operator-webhook-certs"),
-			"webhook Role should scope secret to 'spark-operator-webhook-certs'")
-		assert.True(t, rulesHaveResourceName(role.Rules, "spark-operator-webhook-lock"),
-			"webhook Role should scope lease to 'spark-operator-webhook-lock'")
+		Expect(rulesHaveResource(role.Rules, "secrets")).To(BeTrue(), "webhook Role should have 'secrets'")
+		Expect(rulesHaveResource(role.Rules, "events")).To(BeTrue(), "webhook Role should have 'events' for leader election event recording")
+		Expect(rulesHaveResourceName(role.Rules, "spark-operator-webhook-certs")).To(BeTrue(), "webhook Role should scope secret to 'spark-operator-webhook-certs'")
+		Expect(rulesHaveResourceName(role.Rules, "spark-operator-webhook-lock")).To(BeTrue(), "webhook Role should scope lease to 'spark-operator-webhook-lock'")
 	})
 
-	t.Run("WebhookConfiguration", func(t *testing.T) {
+	It("WebhookConfiguration", func() {
+		t := GinkgoT()
 		mwObj := findResource(resources, "MutatingWebhookConfiguration", "mutating-webhook-configuration")
-		require.NotNil(t, mwObj, "MutatingWebhookConfiguration not found")
+		Expect(mwObj).NotTo(BeNil(), "MutatingWebhookConfiguration not found")
 		mw := convertTo[admissionregistrationv1.MutatingWebhookConfiguration](t, mwObj)
 
 		hasObjectSelector := false
@@ -255,12 +251,10 @@ func TestKustomizeBuild(t *testing.T) {
 				break
 			}
 		}
-		assert.True(t, hasObjectSelector,
-			"pod mutation webhook should have objectSelector to prevent chicken-and-egg deadlock")
+		Expect(hasObjectSelector).To(BeTrue(), "pod mutation webhook should have objectSelector to prevent chicken-and-egg deadlock")
 
 		for _, wh := range mw.Webhooks {
-			assert.NotNil(t, wh.NamespaceSelector,
-				"mutating webhook %s should have namespaceSelector (added via kustomize patch)", wh.Name)
+			Expect(wh.NamespaceSelector).NotTo(BeNil(), "mutating webhook %s should have namespaceSelector (added via kustomize patch)", wh.Name)
 		}
 
 		svcRefCount := 0
@@ -271,12 +265,11 @@ func TestKustomizeBuild(t *testing.T) {
 		}
 
 		vwObj := findResource(resources, "ValidatingWebhookConfiguration", "validating-webhook-configuration")
-		require.NotNil(t, vwObj, "ValidatingWebhookConfiguration not found")
+		Expect(vwObj).NotTo(BeNil(), "ValidatingWebhookConfiguration not found")
 		vw := convertTo[admissionregistrationv1.ValidatingWebhookConfiguration](t, vwObj)
 
 		for _, wh := range vw.Webhooks {
-			assert.NotNil(t, wh.NamespaceSelector,
-				"validating webhook %s should have namespaceSelector (added via kustomize patch)", wh.Name)
+			Expect(wh.NamespaceSelector).NotTo(BeNil(), "validating webhook %s should have namespaceSelector (added via kustomize patch)", wh.Name)
 		}
 
 		for _, wh := range vw.Webhooks {
@@ -284,13 +277,13 @@ func TestKustomizeBuild(t *testing.T) {
 				svcRefCount++
 			}
 		}
-		assert.GreaterOrEqual(t, svcRefCount, 4,
-			"webhook configs should reference 'spark-operator-webhook-svc' (got %d)", svcRefCount)
+		Expect(svcRefCount).To(BeNumerically(">=", 4), "webhook configs should reference 'spark-operator-webhook-svc' (got %d)", svcRefCount)
 	})
 
-	t.Run("DeploymentConfiguration", func(t *testing.T) {
+	It("DeploymentConfiguration", func() {
+		t := GinkgoT()
 		deployments := findResources(resources, "Deployment")
-		require.Len(t, deployments, 2, "expected 2 deployments")
+		Expect(deployments).To(HaveLen(2), "expected 2 deployments")
 
 		var (
 			saNames      []string
@@ -331,13 +324,13 @@ func TestKustomizeBuild(t *testing.T) {
 			}
 		}
 
-		assert.Contains(t, saNames, "spark-operator-controller", "expected serviceAccountName 'spark-operator-controller'")
-		assert.Contains(t, saNames, "spark-operator-webhook", "expected serviceAccountName 'spark-operator-webhook'")
-		assert.Contains(t, ports, int32(9443), "expected containerPort 9443 (webhook)")
-		assert.Contains(t, ports, int32(8080), "expected containerPort 8080 (metrics)")
-		assert.True(t, readOnlyRoot, "expected readOnlyRootFilesystem: true")
-		assert.True(t, runAsNonRoot, "expected runAsNonRoot: true")
-		assert.True(t, hasHealthz, "expected /healthz liveness probe")
-		assert.True(t, hasReadyz, "expected /readyz readiness probe")
+		Expect(saNames).To(ContainElement("spark-operator-controller"), "expected serviceAccountName 'spark-operator-controller'")
+		Expect(saNames).To(ContainElement("spark-operator-webhook"), "expected serviceAccountName 'spark-operator-webhook'")
+		Expect(ports).To(ContainElement(int32(9443)), "expected containerPort 9443 (webhook)")
+		Expect(ports).To(ContainElement(int32(8080)), "expected containerPort 8080 (metrics)")
+		Expect(readOnlyRoot).To(BeTrue(), "expected readOnlyRootFilesystem: true")
+		Expect(runAsNonRoot).To(BeTrue(), "expected runAsNonRoot: true")
+		Expect(hasHealthz).To(BeTrue(), "expected /healthz liveness probe")
+		Expect(hasReadyz).To(BeTrue(), "expected /readyz readiness probe")
 	})
-}
+})
