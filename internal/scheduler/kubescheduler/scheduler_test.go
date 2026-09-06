@@ -136,24 +136,26 @@ var _ = Describe("ScheduleUpdatesExistingPodGroup", func() {
 	})
 })
 
-func TestCleanupDeletesPodGroup(t *testing.T) {
-	app := newTestSparkApplication()
-	existing := &schedulingv1alpha1.PodGroup{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      getPodGroupName(app),
-			Namespace: app.Namespace,
-		},
-	}
+var _ = Describe("CleanupDeletesPodGroup", func() {
+	It("preserves the expected behavior", func() {
+		app := newTestSparkApplication()
+		existing := &schedulingv1alpha1.PodGroup{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      getPodGroupName(app),
+				Namespace: app.Namespace,
+			},
+		}
 
-	sch, cl := newTestScheduler(t, existing)
+		sch, cl := newTestScheduler(GinkgoT(), existing)
 
-	err := sch.Cleanup(app)
-	require.NoError(t, err)
+		err := sch.Cleanup(app)
+		Expect(err).NotTo(HaveOccurred())
 
-	err = cl.Get(context.Background(), types.NamespacedName{Namespace: app.Namespace, Name: getPodGroupName(app)}, &schedulingv1alpha1.PodGroup{})
-	require.Error(t, err)
-	assert.True(t, client.IgnoreNotFound(err) == nil)
-}
+		err = cl.Get(context.Background(), types.NamespacedName{Namespace: app.Namespace, Name: getPodGroupName(app)}, &schedulingv1alpha1.PodGroup{})
+		Expect(err).To(HaveOccurred())
+		Expect(client.IgnoreNotFound(err) == nil).To(BeTrue())
+	})
+})
 
 func TestCleanupIgnoresNotFound(t *testing.T) {
 	sch, _ := newTestScheduler(t)
