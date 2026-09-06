@@ -18,13 +18,10 @@ package kubescheduler
 
 import (
 	"context"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +38,7 @@ import (
 
 var _ = Describe("FactoryWithValidConfig", func() {
 	It("preserves the expected behavior", func() {
-		scheme := newTestScheme(GinkgoT())
+		scheme := newTestScheme()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 		cfg := &Config{SchedulerName: Name, Client: fakeClient}
@@ -61,14 +58,14 @@ var _ = Describe("FactoryWithInvalidConfig", func() {
 
 var _ = Describe("SchedulerName", func() {
 	It("preserves the expected behavior", func() {
-		sch, _ := newTestScheduler(GinkgoT())
+		sch, _ := newTestScheduler()
 		Expect(sch.Name()).To(Equal(Name))
 	})
 })
 
 var _ = Describe("ShouldScheduleAlwaysTrue", func() {
 	It("preserves the expected behavior", func() {
-		sch, _ := newTestScheduler(GinkgoT())
+		sch, _ := newTestScheduler()
 		app := newTestSparkApplication()
 
 		Expect(sch.ShouldSchedule(app)).To(BeTrue())
@@ -77,7 +74,7 @@ var _ = Describe("ShouldScheduleAlwaysTrue", func() {
 
 var _ = Describe("ScheduleCreatesPodGroupAndLabelsApp", func() {
 	It("preserves the expected behavior", func() {
-		sch, cl := newTestScheduler(GinkgoT())
+		sch, cl := newTestScheduler()
 		app := newTestSparkApplication()
 
 		err := sch.Schedule(app)
@@ -90,7 +87,7 @@ var _ = Describe("ScheduleCreatesPodGroupAndLabelsApp", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(created.Spec.MinMember).To(Equal(int32(1)))
-		assertResourceListEqual(GinkgoT(), created.Spec.MinResources, expectedMinResources(app))
+		assertResourceListEqual(created.Spec.MinResources, expectedMinResources(app))
 		Expect(created.OwnerReferences).To(HaveLen(1))
 		Expect(created.OwnerReferences[0].Name).To(Equal(app.Name))
 		Expect(created.OwnerReferences[0].Controller).NotTo(BeNil())
@@ -117,7 +114,7 @@ var _ = Describe("ScheduleUpdatesExistingPodGroup", func() {
 			},
 		}
 
-		sch, cl := newTestScheduler(GinkgoT(), existing)
+		sch, cl := newTestScheduler(existing)
 		app.Labels = map[string]string{"preserve": "me"}
 
 		err := sch.Schedule(app)
@@ -128,7 +125,7 @@ var _ = Describe("ScheduleUpdatesExistingPodGroup", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(updated.Spec.MinMember).To(Equal(int32(1)))
-		assertResourceListEqual(GinkgoT(), updated.Spec.MinResources, expectedMinResources(app))
+		assertResourceListEqual(updated.Spec.MinResources, expectedMinResources(app))
 		Expect(updated.OwnerReferences).To(HaveLen(1))
 		Expect(updated.OwnerReferences[0].Name).To(Equal(app.Name))
 		Expect(app.Labels["preserve"]).To(Equal("me"))
@@ -146,7 +143,7 @@ var _ = Describe("CleanupDeletesPodGroup", func() {
 			},
 		}
 
-		sch, cl := newTestScheduler(GinkgoT(), existing)
+		sch, cl := newTestScheduler(existing)
 
 		err := sch.Cleanup(app)
 		Expect(err).NotTo(HaveOccurred())
@@ -157,36 +154,28 @@ var _ = Describe("CleanupDeletesPodGroup", func() {
 	})
 })
 
-func TestCleanupIgnoresNotFound(t *testing.T) {
-	sch, _ := newTestScheduler(t)
-	err := sch.Cleanup(newTestSparkApplication())
-	assert.NoError(t, err)
-}
+var _ = Describe("CleanupIgnoresNotFound", func() {
+	It("preserves the expected behavior", func() {
+		sch, _ := newTestScheduler()
+		err := sch.Cleanup(newTestSparkApplication())
+		Expect(err).NotTo(HaveOccurred())
+	})
+})
 
-func newTestScheduler(t interface {
-	Helper()
-	FailNow()
-	Errorf(string, ...interface{})
-	Fatalf(string, ...interface{})
-}, objs ...client.Object) (*Scheduler, client.Client) {
-	t.Helper()
+func newTestScheduler(objs ...client.Object) (*Scheduler, client.Client) {
+	GinkgoHelper()
 
-	scheme := newTestScheme(t)
+	scheme := newTestScheme()
 	cl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).Build()
 	return &Scheduler{name: Name, client: cl}, cl
 }
 
-func newTestScheme(t interface {
-	Helper()
-	FailNow()
-	Errorf(string, ...interface{})
-	Fatalf(string, ...interface{})
-}) *runtime.Scheme {
-	t.Helper()
+func newTestScheme() *runtime.Scheme {
+	GinkgoHelper()
 
 	scheme := runtime.NewScheme()
-	require.NoError(t, v1beta2.AddToScheme(scheme))
-	require.NoError(t, schedulingv1alpha1.AddToScheme(scheme))
+	Expect(v1beta2.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(schedulingv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	return scheme
 }
 
@@ -222,19 +211,12 @@ func expectedMinResources(app *v1beta2.SparkApplication) corev1.ResourceList {
 	return util.SumResourceList([]corev1.ResourceList{util.GetDriverRequestResource(app), util.GetExecutorRequestResource(app)})
 }
 
-func assertResourceListEqual(t interface {
-	Helper()
-	FailNow()
-	Errorf(string, ...interface{})
-	Fatalf(string, ...interface{})
-}, actual, expected corev1.ResourceList) {
-	t.Helper()
-
-	assert.Equal(t, len(expected), len(actual))
+func assertResourceListEqual(actual, expected corev1.ResourceList) {
+	GinkgoHelper()
+	Expect(actual).To(HaveLen(len(expected)))
 	for name, exp := range expected {
 		got, ok := actual[name]
-		if assert.Truef(t, ok, "missing resource %s", name) {
-			assert.Zerof(t, exp.Cmp(got), "resource %s mismatch: want %s, got %s", name, exp.String(), got.String())
-		}
+		Expect(ok).To(BeTrue(), "missing resource %s", name)
+		Expect(exp.Cmp(got)).To(BeZero(), "resource %s mismatch: want %s, got %s", name, exp.String(), got.String())
 	}
 }
