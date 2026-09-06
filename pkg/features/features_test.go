@@ -32,17 +32,17 @@ var _ = It("DefaultFeatureGatesRegistered", func() {
 	Expect(utilfeature.DefaultFeatureGate).NotTo(BeNil())
 })
 
-func TestEnabledWithRegisteredFeature(t *testing.T) {
+var _ = It("EnabledWithRegisteredFeature", func() {
 	// Register a test feature for this test
 	testFeature := featuregate.Feature("TestFeatureForEnabled")
 	err := utilfeature.DefaultMutableFeatureGate.Add(map[featuregate.Feature]featuregate.FeatureSpec{
 		testFeature: {Default: false, PreRelease: featuregate.Alpha},
 	})
-	assert.NoError(t, err)
+	Expect(err).NotTo(HaveOccurred())
 
 	// Test that Enabled returns false for a disabled feature
-	assert.False(t, Enabled(testFeature))
-}
+	Expect(Enabled(testFeature)).To(BeFalse())
+})
 
 func TestSetEnableWithRegisteredFeature(t *testing.T) {
 	// Register a test feature for this test
