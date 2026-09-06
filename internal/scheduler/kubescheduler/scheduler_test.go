@@ -18,10 +18,10 @@ package kubescheduler
 
 import (
 	"context"
-	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,130 +36,146 @@ import (
 	schedulingv1alpha1 "sigs.k8s.io/scheduler-plugins/apis/scheduling/v1alpha1"
 )
 
-func TestFactoryWithValidConfig(t *testing.T) {
-	scheme := newTestScheme(t)
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+var _ = Describe("FactoryWithValidConfig", func() {
+	It("preserves the expected behavior", func() {
+		scheme := newTestScheme()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	cfg := &Config{SchedulerName: Name, Client: fakeClient}
-	sch, err := Factory(cfg)
+		cfg := &Config{SchedulerName: Name, Client: fakeClient}
+		sch, err := Factory(cfg)
 
-	require.NoError(t, err)
-	assert.Equal(t, Name, sch.Name())
-}
+		Expect(err).NotTo(HaveOccurred())
+		Expect(sch.Name()).To(Equal(Name))
+	})
+})
 
-func TestFactoryWithInvalidConfig(t *testing.T) {
-	_, err := Factory(struct{}{})
-	require.Error(t, err)
-}
+var _ = Describe("FactoryWithInvalidConfig", func() {
+	It("preserves the expected behavior", func() {
+		_, err := Factory(struct{}{})
+		Expect(err).To(HaveOccurred())
+	})
+})
 
-func TestSchedulerName(t *testing.T) {
-	sch, _ := newTestScheduler(t)
-	assert.Equal(t, Name, sch.Name())
-}
+var _ = Describe("SchedulerName", func() {
+	It("preserves the expected behavior", func() {
+		sch, _ := newTestScheduler()
+		Expect(sch.Name()).To(Equal(Name))
+	})
+})
 
-func TestShouldScheduleAlwaysTrue(t *testing.T) {
-	sch, _ := newTestScheduler(t)
-	app := newTestSparkApplication()
+var _ = Describe("ShouldScheduleAlwaysTrue", func() {
+	It("preserves the expected behavior", func() {
+		sch, _ := newTestScheduler()
+		app := newTestSparkApplication()
 
-	assert.True(t, sch.ShouldSchedule(app))
-}
+		Expect(sch.ShouldSchedule(app)).To(BeTrue())
+	})
+})
 
-func TestScheduleCreatesPodGroupAndLabelsApp(t *testing.T) {
-	sch, cl := newTestScheduler(t)
-	app := newTestSparkApplication()
+var _ = Describe("ScheduleCreatesPodGroupAndLabelsApp", func() {
+	It("preserves the expected behavior", func() {
+		sch, cl := newTestScheduler()
+		app := newTestSparkApplication()
 
-	err := sch.Schedule(app)
-	require.NoError(t, err)
+		err := sch.Schedule(app)
+		Expect(err).NotTo(HaveOccurred())
 
-	assert.Equal(t, getPodGroupName(app), app.Labels[schedulingv1alpha1.PodGroupLabel])
+		Expect(app.Labels[schedulingv1alpha1.PodGroupLabel]).To(Equal(getPodGroupName(app)))
 
-	created := &schedulingv1alpha1.PodGroup{}
-	err = cl.Get(context.Background(), types.NamespacedName{Namespace: app.Namespace, Name: getPodGroupName(app)}, created)
-	require.NoError(t, err)
+		created := &schedulingv1alpha1.PodGroup{}
+		err = cl.Get(context.Background(), types.NamespacedName{Namespace: app.Namespace, Name: getPodGroupName(app)}, created)
+		Expect(err).NotTo(HaveOccurred())
 
-	assert.Equal(t, int32(1), created.Spec.MinMember)
-	assertResourceListEqual(t, created.Spec.MinResources, expectedMinResources(app))
-	require.Len(t, created.OwnerReferences, 1)
-	assert.Equal(t, app.Name, created.OwnerReferences[0].Name)
-	assert.NotNil(t, created.OwnerReferences[0].Controller)
-	assert.True(t, *created.OwnerReferences[0].Controller)
-}
+		Expect(created.Spec.MinMember).To(Equal(int32(1)))
+		assertResourceListEqual(created.Spec.MinResources, expectedMinResources(app))
+		Expect(created.OwnerReferences).To(HaveLen(1))
+		Expect(created.OwnerReferences[0].Name).To(Equal(app.Name))
+		Expect(created.OwnerReferences[0].Controller).NotTo(BeNil())
+		Expect(*created.OwnerReferences[0].Controller).To(BeTrue())
+	})
+})
 
-func TestScheduleUpdatesExistingPodGroup(t *testing.T) {
-	app := newTestSparkApplication()
-	existing := &schedulingv1alpha1.PodGroup{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            getPodGroupName(app),
-			Namespace:       app.Namespace,
-			ResourceVersion: "1",
-			Labels:          map[string]string{"existing": "label"},
-		},
-		Spec: schedulingv1alpha1.PodGroupSpec{
-			MinMember: 5,
-			MinResources: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("100m"),
-				corev1.ResourceMemory: resource.MustParse("100Mi"),
+var _ = Describe("ScheduleUpdatesExistingPodGroup", func() {
+	It("preserves the expected behavior", func() {
+		app := newTestSparkApplication()
+		existing := &schedulingv1alpha1.PodGroup{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            getPodGroupName(app),
+				Namespace:       app.Namespace,
+				ResourceVersion: "1",
+				Labels:          map[string]string{"existing": "label"},
 			},
-		},
-	}
+			Spec: schedulingv1alpha1.PodGroupSpec{
+				MinMember: 5,
+				MinResources: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("100Mi"),
+				},
+			},
+		}
 
-	sch, cl := newTestScheduler(t, existing)
-	app.Labels = map[string]string{"preserve": "me"}
+		sch, cl := newTestScheduler(existing)
+		app.Labels = map[string]string{"preserve": "me"}
 
-	err := sch.Schedule(app)
-	require.NoError(t, err)
+		err := sch.Schedule(app)
+		Expect(err).NotTo(HaveOccurred())
 
-	updated := &schedulingv1alpha1.PodGroup{}
-	err = cl.Get(context.Background(), types.NamespacedName{Namespace: app.Namespace, Name: getPodGroupName(app)}, updated)
-	require.NoError(t, err)
+		updated := &schedulingv1alpha1.PodGroup{}
+		err = cl.Get(context.Background(), types.NamespacedName{Namespace: app.Namespace, Name: getPodGroupName(app)}, updated)
+		Expect(err).NotTo(HaveOccurred())
 
-	assert.Equal(t, int32(1), updated.Spec.MinMember)
-	assertResourceListEqual(t, updated.Spec.MinResources, expectedMinResources(app))
-	require.Len(t, updated.OwnerReferences, 1)
-	assert.Equal(t, app.Name, updated.OwnerReferences[0].Name)
-	assert.Equal(t, "me", app.Labels["preserve"])
-	assert.Equal(t, getPodGroupName(app), app.Labels[schedulingv1alpha1.PodGroupLabel])
-}
+		Expect(updated.Spec.MinMember).To(Equal(int32(1)))
+		assertResourceListEqual(updated.Spec.MinResources, expectedMinResources(app))
+		Expect(updated.OwnerReferences).To(HaveLen(1))
+		Expect(updated.OwnerReferences[0].Name).To(Equal(app.Name))
+		Expect(app.Labels["preserve"]).To(Equal("me"))
+		Expect(app.Labels[schedulingv1alpha1.PodGroupLabel]).To(Equal(getPodGroupName(app)))
+	})
+})
 
-func TestCleanupDeletesPodGroup(t *testing.T) {
-	app := newTestSparkApplication()
-	existing := &schedulingv1alpha1.PodGroup{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      getPodGroupName(app),
-			Namespace: app.Namespace,
-		},
-	}
+var _ = Describe("CleanupDeletesPodGroup", func() {
+	It("preserves the expected behavior", func() {
+		app := newTestSparkApplication()
+		existing := &schedulingv1alpha1.PodGroup{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      getPodGroupName(app),
+				Namespace: app.Namespace,
+			},
+		}
 
-	sch, cl := newTestScheduler(t, existing)
+		sch, cl := newTestScheduler(existing)
 
-	err := sch.Cleanup(app)
-	require.NoError(t, err)
+		err := sch.Cleanup(app)
+		Expect(err).NotTo(HaveOccurred())
 
-	err = cl.Get(context.Background(), types.NamespacedName{Namespace: app.Namespace, Name: getPodGroupName(app)}, &schedulingv1alpha1.PodGroup{})
-	require.Error(t, err)
-	assert.True(t, client.IgnoreNotFound(err) == nil)
-}
+		err = cl.Get(context.Background(), types.NamespacedName{Namespace: app.Namespace, Name: getPodGroupName(app)}, &schedulingv1alpha1.PodGroup{})
+		Expect(err).To(HaveOccurred())
+		Expect(client.IgnoreNotFound(err) == nil).To(BeTrue())
+	})
+})
 
-func TestCleanupIgnoresNotFound(t *testing.T) {
-	sch, _ := newTestScheduler(t)
-	err := sch.Cleanup(newTestSparkApplication())
-	assert.NoError(t, err)
-}
+var _ = Describe("CleanupIgnoresNotFound", func() {
+	It("preserves the expected behavior", func() {
+		sch, _ := newTestScheduler()
+		err := sch.Cleanup(newTestSparkApplication())
+		Expect(err).NotTo(HaveOccurred())
+	})
+})
 
-func newTestScheduler(t *testing.T, objs ...client.Object) (*Scheduler, client.Client) {
-	t.Helper()
+func newTestScheduler(objs ...client.Object) (*Scheduler, client.Client) {
+	GinkgoHelper()
 
-	scheme := newTestScheme(t)
+	scheme := newTestScheme()
 	cl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).Build()
 	return &Scheduler{name: Name, client: cl}, cl
 }
 
-func newTestScheme(t *testing.T) *runtime.Scheme {
-	t.Helper()
+func newTestScheme() *runtime.Scheme {
+	GinkgoHelper()
 
 	scheme := runtime.NewScheme()
-	require.NoError(t, v1beta2.AddToScheme(scheme))
-	require.NoError(t, schedulingv1alpha1.AddToScheme(scheme))
+	Expect(v1beta2.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(schedulingv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	return scheme
 }
 
@@ -195,14 +211,12 @@ func expectedMinResources(app *v1beta2.SparkApplication) corev1.ResourceList {
 	return util.SumResourceList([]corev1.ResourceList{util.GetDriverRequestResource(app), util.GetExecutorRequestResource(app)})
 }
 
-func assertResourceListEqual(t *testing.T, actual, expected corev1.ResourceList) {
-	t.Helper()
-
-	assert.Equal(t, len(expected), len(actual))
+func assertResourceListEqual(actual, expected corev1.ResourceList) {
+	GinkgoHelper()
+	Expect(actual).To(HaveLen(len(expected)))
 	for name, exp := range expected {
 		got, ok := actual[name]
-		if assert.Truef(t, ok, "missing resource %s", name) {
-			assert.Zerof(t, exp.Cmp(got), "resource %s mismatch: want %s, got %s", name, exp.String(), got.String())
-		}
+		Expect(ok).To(BeTrue(), "missing resource %s", name)
+		Expect(exp.Cmp(got)).To(BeZero(), "resource %s mismatch: want %s, got %s", name, exp.String(), got.String())
 	}
 }
