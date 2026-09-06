@@ -102,7 +102,7 @@ var _ = It("SetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultVal
 	Expect(*app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval).To(Equal(expectedOnSubmissionFailureRetryInterval))
 })
 
-func TestSetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValueForOnSubmissionFailureRetryInterval(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValueForOnSubmissionFailureRetryInterval", func() {
 	expectedOnFailureRetryInterval := int64(10)
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{
@@ -115,12 +115,12 @@ func TestSetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultValueF
 
 	SetSparkApplicationDefaults(app)
 
-	assert.Equal(t, RestartPolicyOnFailure, app.Spec.RestartPolicy.Type)
-	assert.NotNil(t, app.Spec.RestartPolicy.OnFailureRetryInterval)
-	assert.Equal(t, expectedOnFailureRetryInterval, *app.Spec.RestartPolicy.OnFailureRetryInterval)
-	assert.NotNil(t, app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval)
-	assert.Equal(t, int64(5), *app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval)
-}
+	Expect(app.Spec.RestartPolicy.Type).To(Equal(RestartPolicyOnFailure))
+	Expect(app.Spec.RestartPolicy.OnFailureRetryInterval).NotTo(BeNil())
+	Expect(*app.Spec.RestartPolicy.OnFailureRetryInterval).To(Equal(expectedOnFailureRetryInterval))
+	Expect(app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval).NotTo(BeNil())
+	Expect(*app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval).To(Equal(int64(5)))
+})
 
 func TestSetSparkApplicationDefaultsDriverSpecDefaults(t *testing.T) {
 	//Case1: Driver config not set.
