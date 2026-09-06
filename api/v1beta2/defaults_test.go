@@ -122,7 +122,7 @@ var _ = It("SetSparkApplicationDefaultsOnFailureRestartPolicyShouldSetDefaultVal
 	Expect(*app.Spec.RestartPolicy.OnSubmissionFailureRetryInterval).To(Equal(int64(5)))
 })
 
-func TestSetSparkApplicationDefaultsDriverSpecDefaults(t *testing.T) {
+var _ = It("SetSparkApplicationDefaultsDriverSpecDefaults", func() {
 	//Case1: Driver config not set.
 	app := &SparkApplication{
 		Spec: SparkApplicationSpec{},
@@ -131,15 +131,15 @@ func TestSetSparkApplicationDefaultsDriverSpecDefaults(t *testing.T) {
 	SetSparkApplicationDefaults(app)
 
 	if app.Spec.Driver.Cores == nil {
-		t.Error("Expected app.Spec.Driver.Cores not to be nil.")
+		Fail("Expected app.Spec.Driver.Cores not to be nil.")
 	} else {
-		assert.Equal(t, int32(1), *app.Spec.Driver.Cores)
+		Expect(*app.Spec.Driver.Cores).To(Equal(int32(1)))
 	}
 
 	if app.Spec.Driver.Memory == nil {
-		t.Error("Expected app.Spec.Driver.Memory not to be nil.")
+		Fail("Expected app.Spec.Driver.Memory not to be nil.")
 	} else {
-		assert.Equal(t, "1g", *app.Spec.Driver.Memory)
+		Expect(*app.Spec.Driver.Memory).To(Equal("1g"))
 	}
 
 	//Case2: Driver config set via SparkConf.
@@ -153,9 +153,9 @@ func TestSetSparkApplicationDefaultsDriverSpecDefaults(t *testing.T) {
 	}
 	SetSparkApplicationDefaults(app)
 
-	assert.Nil(t, app.Spec.Driver.Cores)
-	assert.Nil(t, app.Spec.Driver.Memory)
-}
+	Expect(app.Spec.Driver.Cores).To(BeNil())
+	Expect(app.Spec.Driver.Memory).To(BeNil())
+})
 
 func TestSetSparkApplicationDefaultsExecutorSpecDefaults(t *testing.T) {
 	//Case1: Executor config not set.
