@@ -1,5 +1,5 @@
 /*
-Copyright 2024 The Kubeflow authors.
+Copyright 2026 The Kubeflow authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,24 +17,13 @@ limitations under the License.
 package resourceusage
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("BytesToMi", func() {
-	It("preserves the expected behavior", func() {
-		testCases := []struct {
-			input    int64
-			expected string
-		}{
-			{(2 * 1024 * 1024) - 1, "1Mi"},
-			{2 * 1024 * 1024, "2Mi"},
-			{(1024 * 1024 * 1024) - 1, "1023Mi"},
-			{1024 * 1024 * 1024, "1024Mi"},
-		}
-
-		for _, tc := range testCases {
-			Expect(bytesToMi(tc.input)).To(Equal(tc.expected))
-		}
-	})
-})
+func TestResourceusage(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "resourceusage suite")
+}

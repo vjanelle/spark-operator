@@ -18,16 +18,17 @@ package yunikorn
 
 import (
 	"encoding/json"
-	"testing"
 
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/kubeflow/spark-operator/v2/api/v1beta2"
 )
 
-func TestSchedule(t *testing.T) {
+var _ = Describe("Schedule", func() {
 	testCases := []struct {
 		name     string
 		app      *v1beta2.SparkApplication
@@ -356,64 +357,65 @@ func TestSchedule(t *testing.T) {
 		},
 	}
 
-	scheduler := &Scheduler{}
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		It(tc.name, func() {
+			tc.app = tc.app.DeepCopy()
+			scheduler := &Scheduler{}
 			marshalledExpected, err := json.Marshal(tc.expected)
-			if err != nil {
-				t.Fatalf("Failed to marshal expected task groups: %v", err)
-			}
+			Expect(err).NotTo(HaveOccurred(), "Failed to marshal expected task groups: %v", err)
 
 			err = scheduler.Schedule(tc.app)
-			assert.NoError(t, err)
-			assert.JSONEq(t, string(marshalledExpected), tc.app.Spec.Driver.Annotations[taskGroupsAnnotation])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(tc.app.Spec.Driver.Annotations[taskGroupsAnnotation]).To(MatchJSON(string(marshalledExpected)))
 
 			options := tc.app.Spec.BatchSchedulerOptions
 			if options != nil && options.Queue != nil {
-				assert.Equal(t, *options.Queue, tc.app.Spec.Driver.Labels[queueLabel])
-				assert.Equal(t, *options.Queue, tc.app.Spec.Executor.Labels[queueLabel])
+				Expect(tc.app.Spec.Driver.Labels[queueLabel]).To(Equal(*options.Queue))
+				Expect(tc.app.Spec.Executor.Labels[queueLabel]).To(Equal(*options.Queue))
 			}
 
-			assert.Equal(t, "yunikorn", *tc.app.Spec.Driver.SchedulerName)
-			assert.Equal(t, "yunikorn", *tc.app.Spec.Executor.SchedulerName)
+			Expect(*tc.app.Spec.Driver.SchedulerName).To(Equal("yunikorn"))
+			Expect(*tc.app.Spec.Executor.SchedulerName).To(Equal("yunikorn"))
 		})
 	}
-}
+})
 
-func TestMergeNodeSelector(t *testing.T) {
-	testCases := []struct {
-		appNodeSelector map[string]string
-		podNodeSelector map[string]string
-		expected        map[string]string
-	}{
-		{
-			appNodeSelector: map[string]string{},
-			podNodeSelector: map[string]string{},
-			expected:        nil,
-		},
-		{
-			appNodeSelector: map[string]string{"key1": "value1"},
-			podNodeSelector: map[string]string{},
-			expected:        map[string]string{"key1": "value1"},
-		},
-		{
-			appNodeSelector: map[string]string{},
-			podNodeSelector: map[string]string{"key1": "value1"},
-			expected:        map[string]string{"key1": "value1"},
-		},
-		{
-			appNodeSelector: map[string]string{"key1": "value1"},
-			podNodeSelector: map[string]string{"key2": "value2"},
-			expected:        map[string]string{"key1": "value1", "key2": "value2"},
-		},
-		{
-			appNodeSelector: map[string]string{"key1": "value1"},
-			podNodeSelector: map[string]string{"key1": "value2", "key2": "value2"},
-			expected:        map[string]string{"key1": "value2", "key2": "value2"},
-		},
-	}
+var _ = Describe("MergeNodeSelector", func() {
+	It("preserves the expected behavior", func() {
+		testCases := []struct {
+			appNodeSelector map[string]string
+			podNodeSelector map[string]string
+			expected        map[string]string
+		}{
+			{
+				appNodeSelector: map[string]string{},
+				podNodeSelector: map[string]string{},
+				expected:        nil,
+			},
+			{
+				appNodeSelector: map[string]string{"key1": "value1"},
+				podNodeSelector: map[string]string{},
+				expected:        map[string]string{"key1": "value1"},
+			},
+			{
+				appNodeSelector: map[string]string{},
+				podNodeSelector: map[string]string{"key1": "value1"},
+				expected:        map[string]string{"key1": "value1"},
+			},
+			{
+				appNodeSelector: map[string]string{"key1": "value1"},
+				podNodeSelector: map[string]string{"key2": "value2"},
+				expected:        map[string]string{"key1": "value1", "key2": "value2"},
+			},
+			{
+				appNodeSelector: map[string]string{"key1": "value1"},
+				podNodeSelector: map[string]string{"key1": "value2", "key2": "value2"},
+				expected:        map[string]string{"key1": "value2", "key2": "value2"},
+			},
+		}
 
-	for _, tc := range testCases {
-		assert.Equal(t, tc.expected, mergeNodeSelector(tc.appNodeSelector, tc.podNodeSelector))
-	}
-}
+		for _, tc := range testCases {
+			Expect(mergeNodeSelector(tc.appNodeSelector, tc.podNodeSelector)).To(Equal(tc.expected))
+		}
+	})
+})

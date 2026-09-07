@@ -17,9 +17,9 @@ limitations under the License.
 package volcano
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
-	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +33,7 @@ import (
 	"github.com/kubeflow/spark-operator/v2/pkg/util"
 )
 
-func TestSchedule(t *testing.T) {
+var _ = Describe("Schedule", func() {
 	testCases := []struct {
 		name                 string
 		app                  *v1beta2.SparkApplication
@@ -224,7 +224,8 @@ func TestSchedule(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		It(tc.name, func() {
+			tc.app = tc.app.DeepCopy()
 			tc.app.Annotations = make(map[string]string)
 			tc.app.Spec.Driver.Annotations = make(map[string]string)
 			tc.app.Spec.Executor.Annotations = make(map[string]string)
@@ -244,43 +245,42 @@ func TestSchedule(t *testing.T) {
 
 			err := scheduler.Schedule(tc.app)
 
-			assert.NoError(t, err)
-			assert.NotNil(t, capturedPodGroup)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(capturedPodGroup).NotTo(BeNil())
 
 			if tc.expectedQueue != "" {
-				assert.Equal(t, tc.expectedQueue, capturedPodGroup.Spec.Queue)
+				Expect(capturedPodGroup.Spec.Queue).To(Equal(tc.expectedQueue))
 			}
 			if tc.expectedPriorityName != "" {
-				assert.Equal(t, tc.expectedPriorityName, capturedPodGroup.Spec.PriorityClassName)
+				Expect(capturedPodGroup.Spec.PriorityClassName).To(Equal(tc.expectedPriorityName))
 			}
 
 			switch tc.expectedMode {
 			case "client":
-				assert.Contains(t, tc.app.Spec.Executor.Annotations, v1beta1.KubeGroupNameAnnotationKey)
-				assert.NotContains(t, tc.app.Spec.Driver.Annotations, v1beta1.KubeGroupNameAnnotationKey)
+				Expect(tc.app.Spec.Executor.Annotations).To(HaveKey(v1beta1.KubeGroupNameAnnotationKey))
+				Expect(tc.app.Spec.Driver.Annotations).NotTo(HaveKey(v1beta1.KubeGroupNameAnnotationKey))
 			case "cluster":
-				assert.Contains(t, tc.app.Spec.Driver.Annotations, v1beta1.KubeGroupNameAnnotationKey)
-				assert.Contains(t, tc.app.Spec.Executor.Annotations, v1beta1.KubeGroupNameAnnotationKey)
+				Expect(tc.app.Spec.Driver.Annotations).To(HaveKey(v1beta1.KubeGroupNameAnnotationKey))
+				Expect(tc.app.Spec.Executor.Annotations).To(HaveKey(v1beta1.KubeGroupNameAnnotationKey))
 			}
 
 			expectedPodGroupName := getPodGroupName(tc.app)
-			assert.Equal(t, expectedPodGroupName, capturedPodGroup.Name)
+			Expect(capturedPodGroup.Name).To(Equal(expectedPodGroupName))
 
-			assert.Len(t, capturedPodGroup.OwnerReferences, 1)
-			assert.Equal(t, tc.app.Name, capturedPodGroup.OwnerReferences[0].Name)
-			assert.Equal(t, "SparkApplication", capturedPodGroup.OwnerReferences[0].Kind)
+			Expect(capturedPodGroup.OwnerReferences).To(HaveLen(1))
+			Expect(capturedPodGroup.OwnerReferences[0].Name).To(Equal(tc.app.Name))
+			Expect(capturedPodGroup.OwnerReferences[0].Kind).To(Equal("SparkApplication"))
 
 			// Verify custom resources if specified
 			if tc.app.Spec.BatchSchedulerOptions != nil && len(tc.app.Spec.BatchSchedulerOptions.Resources) > 0 {
-				assert.NotNil(t, capturedPodGroup.Spec.MinResources)
+				Expect(capturedPodGroup.Spec.MinResources).NotTo(BeNil())
 				for resourceName, expectedQuantity := range tc.app.Spec.BatchSchedulerOptions.Resources {
 					actualQuantity := capturedPodGroup.Spec.MinResources.Name(resourceName, resource.DecimalSI)
-					assert.Equal(t, expectedQuantity.Value(), actualQuantity.Value(),
-						"Resource %s quantity should match in PodGroup MinResources", resourceName)
+					Expect(actualQuantity.Value()).To(Equal(expectedQuantity.Value()), "Resource %s quantity should match in PodGroup MinResources", resourceName)
 				}
 			}
 			if tc.app.Spec.BatchSchedulerOptions == nil {
-				assert.NotNil(t, capturedPodGroup.Spec.MinResources)
+				Expect(capturedPodGroup.Spec.MinResources).NotTo(BeNil())
 
 				var expectedResources corev1.ResourceList
 				if tc.expectedMode == "cluster" {
@@ -295,10 +295,9 @@ func TestSchedule(t *testing.T) {
 
 				for resourceName, expectedQuantity := range expectedResources {
 					actualQuantity := capturedPodGroup.Spec.MinResources.Name(resourceName, resource.DecimalSI)
-					assert.Equal(t, expectedQuantity.Value(), actualQuantity.Value(),
-						"Resource %s quantity should match calculated resources", resourceName)
+					Expect(actualQuantity.Value()).To(Equal(expectedQuantity.Value()), "Resource %s quantity should match calculated resources", resourceName)
 				}
 			}
 		})
 	}
-}
+})
