@@ -16,9 +16,10 @@ limitations under the License.
 package v1beta2
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 func TestDefaults(t *testing.T) {

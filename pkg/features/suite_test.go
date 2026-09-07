@@ -17,9 +17,10 @@ limitations under the License.
 package features
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 func TestFeatures(t *testing.T) {
